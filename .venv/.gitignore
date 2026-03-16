@@ -1,0 +1,17 @@
+# Database
+db.sqlite3
+
+# Media and uploads
+media/
+submissions/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environment
+.venv/
+
+# PyCharm
+.idea/
