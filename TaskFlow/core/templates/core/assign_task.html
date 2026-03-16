@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assign New Task - TaskFlow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .sidebar-transition { transition: transform 0.3s ease-in-out; }
+        .stat-card-hover {
+            transition: all 0.3s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .stat-card-hover:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .task-card-hover {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .task-card-hover:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            background-color: #f8fafc;
+        }
+        .status-badge {
+            font-size: 0.75rem;
+            font-weight: 500;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+        }
+        .status-pending { background-color: #fef3c7; color: #92400e; }
+        .status-in_progress { background-color: #dbeafe; color: #1e40af; }
+        .status-completed { background-color: #dcfce7; color: #166534; }
+        .status-overdue { background-color: #fee2e2; color: #991b1b; }
+    </style>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<body class="min-h-screen">
+    <!-- Mobile menu button -->
+    <div class="lg:hidden fixed top-4 left-4 z-50">
+        <button id="mobile-menu-btn" class="bg-white p-2 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <i data-lucide="menu" class="w-6 h-6 text-gray-600"></i>
+        </button>
+    </div>
+
+    <!-- Sidebar -->
+    <div id="sidebar" class="fixed left-0 top-0 h-full w-64 bg-white shadow-xl z-40 transform -translate-x-full lg:translate-x-0 sidebar-transition">
+        <div class="p-6 border-b border-gray-100">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
+                    <i data-lucide="briefcase" class="w-6 h-6 text-white"></i>
+                </div>
+                <div>
+                    <h2 class="font-semibold text-gray-800">TaskFlow</h2>
+                    <p class="text-sm text-gray-500">Productivity Dashboard</p>
+                </div>
+            </div>
+        </div>
+
+        <nav class="p-4 space-y-1">
+            <div class="mb-6">
+                <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                    <div class="w-8 h-8 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center">
+                        <span class="text-white font-medium text-sm">{{ request.user.username|first|upper }}</span>
+                    </div>
+                    <div>
+                        <p class="font-medium text-gray-800">{{ request.user.username }}</p>
+                        <p class="text-xs text-gray-500">{{ profile.get_role_display }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <a href="{% url 'home' %}" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 text-gray-700 hover:text-gray-900 transition-colors">
+                <i data-lucide="home" class="w-5 h-5"></i>
+                <span>Dashboard</span>
+            </a>
+
+            {% if profile.role == "boss" %}
+                <a href="{% url 'room_list' %}" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 text-gray-700 hover:text-gray-900 transition-colors">
+                    <i data-lucide="users" class="w-5 h-5"></i>
+                    <span>My Rooms</span>
+                </a>
+                <a href="{% url 'create_room' %}" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 text-gray-700 hover:text-gray-900 transition-colors">
+                    <i data-lucide="plus-circle" class="w-5 h-5"></i>
+                    <span>Create Room</span>
+                </a>
+                <a href="{% url 'create_task' %}" class="flex items-center space-x-3 p-3 rounded-lg bg-indigo-50 text-indigo-700 font-medium">
+                    <i data-lucide="clipboard-plus" class="w-5 h-5"></i>
+                    <span>Assign Task</span>
+                </a>
+                <a href="{% url 'task_list' %}" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 text-gray-700 hover:text-gray-900 transition-colors">
+                    <i data-lucide="clipboard-list" class="w-5 h-5"></i>
+                    <span>All Tasks</span>
+                </a>
+            {% elif profile.role == "employee" %}
+                <a href="{% url 'room_list' %}" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 text-gray-700 hover:text-gray-900 transition-colors">
+                    <i data-lucide="users" class="w-5 h-5"></i>
+                    <span>My Rooms</span>
+                </a>
+                <a href="{% url 'join_room' %}" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 text-gray-700 hover:text-gray-900 transition-colors">
+                    <i data-lucide="user-plus" class="w-5 h-5"></i>
+                    <span>Join Room</span>
+                </a>
+                <a href="{% url 'task_list' %}" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 text-gray-700 hover:text-gray-900 transition-colors">
+                    <i data-lucide="check-square" class="w-5 h-5"></i>
+                    <span>My Tasks</span>
+                </a>
+            {% endif %}
+        </nav>
+
+        <div class="absolute bottom-4 left-4 right-4">
+            <a href="{% url 'logout' %}" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-red-50 text-red-600 hover:text-red-700 transition-colors w-full">
+                <i data-lucide="log-out" class="w-5 h-5"></i>
+                <span>Logout</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Overlay for mobile -->
+    <div id="overlay" class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden lg:hidden"></div>
+
+    <!-- Main content -->
+    <div class="lg:ml-64 min-h-screen">
+        <!-- Header with gradient -->
+        <div class="gradient-bg rounded-xl p-8 mx-6 mt-6 text-white">
+            <div class="flex items-center space-x-4">
+                <a href="{% url 'home' %}" class="p-2 hover:bg-indigo-500 rounded-full transition-colors">
+                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                </a>
+                <div>
+                    <h1 class="text-3xl font-bold mb-2">Assign New Task</h1>
+                    <p class="text-indigo-100 text-lg">Create a task and assign it to an employee in a specific room</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-6 lg:p-8">
+            <!-- Form Container -->
+            <div class="max-w-3xl mx-auto">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="border-b border-gray-100 px-6 py-4">
+                        <h2 class="text-lg font-semibold text-gray-900 flex items-center">
+                            <i data-lucide="clipboard-plus" class="w-5 h-5 mr-2 text-indigo-500"></i>
+                            Task Details
+                        </h2>
+                    </div>
+
+                    <div class="p-6">
+                        <form method="post" class="space-y-6">
+                            {% csrf_token %}
+
+                            <!-- Room and Employee Selection -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label for="id_task_room" class="block text-sm font-medium text-gray-700 mb-2">
+                                        <i data-lucide="building" class="w-4 h-4 inline mr-1"></i>
+                                        Task Room
+                                    </label>
+                                    <select id="id_task_room" name="task_room" class="w-full border border-gray-300 rounded-lg py-3 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
+                                        <option value="">Select a room</option>
+                                        {% for room in rooms %}
+                                            <option value="{{ room.id }}">{{ room.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="id_assigned_to" class="block text-sm font-medium text-gray-700 mb-2">
+                                        <i data-lucide="user" class="w-4 h-4 inline mr-1"></i>
+                                        Assigned To
+                                    </label>
+                                    <select id="id_assigned_to" name="assigned_to" class="w-full border border-gray-300 rounded-lg py-3 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-gray-100 transition-colors" disabled>
+                                        <option value="">Select an employee</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Task Title -->
+                            <div>
+                                <label for="id_title" class="block text-sm font-medium text-gray-700 mb-2">
+                                    <i data-lucide="type" class="w-4 h-4 inline mr-1"></i>
+                                    Task Title
+                                </label>
+                                <input type="text" id="id_title" name="title" class="w-full border border-gray-300 rounded-lg py-3 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors" placeholder="e.g., Complete marketing report" required>
+                            </div>
+
+                            <!-- Task Description -->
+                            <div>
+                                <label for="id_description" class="block text-sm font-medium text-gray-700 mb-2">
+                                    <i data-lucide="file-text" class="w-4 h-4 inline mr-1"></i>
+                                    Description
+                                </label>
+                                <textarea id="id_description" name="description" rows="4" class="w-full border border-gray-300 rounded-lg py-3 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors" placeholder="Provide details about the task requirements, deliverables, and any specific instructions..." required></textarea>
+                            </div>
+
+                            <!-- Deadline and Importance -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label for="id_deadline" class="block text-sm font-medium text-gray-700 mb-2">
+                                        <i data-lucide="calendar" class="w-4 h-4 inline mr-1"></i>
+                                        Deadline
+                                    </label>
+                                    <input type="date" id="id_deadline" name="deadline" class="w-full border border-gray-300 rounded-lg py-3 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors" required>
+                                </div>
+                                <div>
+                                    <label for="id_importance" class="block text-sm font-medium text-gray-700 mb-2">
+                                        <i data-lucide="flag" class="w-4 h-4 inline mr-1"></i>
+                                        Importance
+                                    </label>
+                                    <select id="id_importance" name="importance" class="w-full border border-gray-300 rounded-lg py-3 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
+                                        <option value="low">🟢 Low Priority</option>
+                                        <option value="medium" selected>🟡 Medium Priority</option>
+                                        <option value="high">🔴 High Priority</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <div class="pt-4">
+                                <button type="submit" class="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 hover:shadow-lg">
+                                    <i data-lucide="clipboard-plus" class="w-5 h-5 mr-2"></i>
+                                    Assign Task
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Help Section -->
+                <div class="mt-6 bg-blue-50 rounded-xl p-6 border border-blue-200">
+                    <div class="flex items-start space-x-3">
+                        <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="info" class="w-4 h-4 text-blue-600"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-medium text-blue-900 mb-1">Task Assignment Tips</h3>
+                            <ul class="text-sm text-blue-700 space-y-1">
+                                <li>• Choose the appropriate room to organize tasks by project or department</li>
+                                <li>• Employee list will populate after selecting a room</li>
+                                <li>• Set realistic deadlines to ensure quality work delivery</li>
+                                <li>• Use clear, descriptive titles and detailed descriptions</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Set minimum date to tomorrow
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const minDate = tomorrow.toISOString().split('T')[0];
+        document.getElementById('id_deadline').setAttribute('min', minDate);
+
+        // Mobile menu functionality
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+        const sidebarLinks = document.querySelectorAll('#sidebar a');
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+            document.body.classList.toggle('overflow-hidden');
+        }
+
+        mobileMenuBtn.addEventListener('click', toggleSidebar);
+        overlay.addEventListener('click', toggleSidebar);
+
+        // Close sidebar when clicking on links (mobile only)
+        sidebarLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth < 1024) {
+                    toggleSidebar();
+                }
+            });
+        });
+
+        // Close sidebar on window resize if mobile
+        window.addEventListener('resize', () => {
+            if (window.innerWidth >= 1024) {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.add('hidden');
+                document.body.classList.remove('overflow-hidden');
+            }
+        });
+
+        // AJAX functionality for employee dropdown
+        $(document).ready(function() {
+            // Event listener for when a new room is selected
+            $("#id_task_room").change(function() {
+                const roomId = $(this).val();
+                const assignedToSelect = $("#id_assigned_to");
+
+                // Clear previous options and disable the dropdown
+                assignedToSelect.html('<option value="">Loading...</option>').prop('disabled', true).removeClass('bg-gray-100');
+
+                if (roomId) {
+                    // Make an AJAX call to the new Django view
+                    $.ajax({
+                        url: "{% url 'get_employees_by_room' %}",
+                        data: {
+                            'room_id': roomId
+                        },
+                        dataType: 'json',
+                        success: function(data) {
+                            // Clear loading message and enable dropdown
+                            assignedToSelect.html('<option value="">Select an employee</option>').prop('disabled', false);
+
+                            // Populate the dropdown with the returned employees
+                            $.each(data, function(index, employee) {
+                                assignedToSelect.append($('<option></option>').attr('value', employee.id).text(employee.username));
+                            });
+                        },
+                        error: function(error) {
+                            console.error("Error fetching employees:", error);
+                            assignedToSelect.html('<option value="">Error loading employees</option>').prop('disabled', true).addClass('bg-gray-100');
+                        }
+                    });
+                } else {
+                    // If no room is selected, disable and reset employee dropdown
+                    assignedToSelect.html('<option value="">Select an employee</option>').prop('disabled', true).addClass('bg-gray-100');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

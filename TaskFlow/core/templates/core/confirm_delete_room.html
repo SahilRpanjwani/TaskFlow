@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirm Room Deletion</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-lg p-8 w-full max-w-md">
+        <div class="text-center mb-6">
+            <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="alert-triangle" class="w-8 h-8 text-red-600"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-900 mb-1">Confirm Deletion</h2>
+            <p class="text-gray-600">Are you sure you want to delete the room "<span class="font-semibold">{{ room.name }}</span>"?</p>
+            <p class="text-sm text-red-500 mt-2">This action cannot be undone.</p>
+        </div>
+
+        <form method="post" action="{% url 'delete_room' room.id %}">
+            {% csrf_token %}
+            <div class="flex space-x-4">
+                <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
+                    Delete
+                </button>
+                <a href="{% url 'room_detail' room.id %}" class="w-full text-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-4 rounded-lg transition-colors">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

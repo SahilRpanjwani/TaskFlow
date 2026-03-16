@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - TaskFlow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <h1 class="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <span class="text-sm text-gray-600">{{ user.username }}</span>
+                        <a href="{% url 'logout' %}" class="text-red-600 hover:text-red-800">Logout</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-blue-100 rounded-lg">
+                            <i data-lucide="users" class="w-6 h-6 text-blue-600"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Total Users</p>
+                            <p class="text-2xl font-bold text-gray-900">{{ total_users }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-green-100 rounded-lg">
+                            <i data-lucide="building" class="w-6 h-6 text-green-600"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Total Rooms</p>
+                            <p class="text-2xl font-bold text-gray-900">{{ total_rooms }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-purple-100 rounded-lg">
+                            <i data-lucide="clipboard-list" class="w-6 h-6 text-purple-600"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Total Tasks</p>
+                            <p class="text-2xl font-bold text-gray-900">{{ total_tasks }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-whit
+                e rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-orange-100 rounded-lg">
+                            <i data-lucide="file-text" class="w-6 h-6 text-orange-600"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Submissions</p>
+                            <p class="text-2xl font-bold text-gray-900">{{ total_submissions }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+                    <div class="space-y-3">
+                        <a href="{% url 'manage_users' %}" class="block p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+                            <div class="flex items-center">
+                                <i data-lucide="users" class="w-5 h-5 text-gray-600 mr-3"></i>
+                                <span class="font-medium">Manage Users</span>
+                            </div>
+                        </a>
+                        <a href="{% url 'system_overview' %}" class="block p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+                            <div class="flex items-center">
+                                <i data-lucide="bar-chart" class="w-5 h-5 text-gray-600 mr-3"></i>
+                                <span class="font-medium">System Overview</span>
+                            </div>
+                        </a>
+                        <a href="{% url 'room_list' %}" class="block p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+                            <div class="flex items-center">
+                                <i data-lucide="building" class="w-5 h-5 text-gray-600 mr-3"></i>
+                                <span class="font-medium">View All Rooms</span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Role Breakdown -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">User Roles</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Admins</span>
+                            <span class="font-semibold text-red-600">{{ admin_count }}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Bosses</span>
+                            <span class="font-semibold text-blue-600">{{ boss_count }}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Employees</span>
+                            <span class="font-semibold text-green-600">{{ employee_count }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Task Status -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Task Status</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Pending</span>
+                            <span class="font-semibold text-yellow-600">{{ pending_tasks }}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Completed</span>
+                            <span class="font-semibold text-green-600">{{ completed_tasks }}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Overdue</span>
+                            <span class="font-semibold text-red-600">{{ overdue_tasks }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Users -->
+            {% if recent_users %}
+            <div class="mt-8 bg-white rounded-lg shadow">
+                <div class="px-6 py-4 border-b">
+                    <h3 class="text-lg font-semibold text-gray-900">Recent Users</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for user in recent_users %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-900">{{ user.username }}</div>
+                                    <div class="text-sm text-gray-500">{{ user.email }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                        {% if user.profile.role == 'admin' %}bg-red-100 text-red-800
+                                        {% elif user.profile.role == 'boss' %}bg-blue-100 text-blue-800
+                                        {% else %}bg-green-100 text-green-800{% endif %}">
+                                        {{ user.profile.get_role_display }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {{ user.date_joined|date:"M d, Y" }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+        </main>
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Room - TaskFlow</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .active-link {
+      background-color: #ebf5ff;
+      color: #1d4ed8;
+      font-weight: 600;
+      border-left: 4px solid #2563eb;
+    }
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem;
+      border-radius: 0.5rem;
+      transition: all 0.2s;
+    }
+    .nav-link:hover {
+      background-color: #f9fafb;
+      color: #111827;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex">
+
+  <!-- Sidebar -->
+  <aside class="w-64 bg-white shadow-lg h-screen sticky top-0">
+    <div class="p-6 border-b border-gray-200 flex items-center gap-3">
+      <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+        <i data-lucide="briefcase" class="w-6 h-6 text-white"></i>
+      </div>
+      <div>
+        <h2 class="font-semibold text-gray-800">TaskFlow</h2>
+        <p class="text-sm text-gray-500">Workspace</p>
+      </div>
+    </div>
+
+    <nav class="p-4 space-y-2">
+      <a href="{% url 'home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active-link{% endif %}">
+        <i data-lucide="home" class="w-5 h-5"></i>
+        <span>Dashboard</span>
+      </a>
+
+      {% if profile.role == "boss" %}
+        <a href="{% url 'room_list' %}" class="nav-link {% if request.resolver_match.url_name == 'room_list' %}active-link{% endif %}">
+          <i data-lucide="users" class="w-5 h-5"></i>
+          <span>My Rooms</span>
+        </a>
+        <a href="{% url 'create_room' %}" class="nav-link {% if request.resolver_match.url_name == 'create_room' %}active-link{% endif %}">
+          <i data-lucide="plus-circle" class="w-5 h-5"></i>
+          <span>Create Room</span>
+        </a>
+        <a href="{% url 'task_list' %}" class="nav-link {% if request.resolver_match.url_name == 'task_list' %}active-link{% endif %}">
+          <i data-lucide="clipboard-list" class="w-5 h-5"></i>
+          <span>All Tasks</span>
+        </a>
+      {% elif profile.role == "employee" %}
+        <a href="{% url 'room_list' %}" class="nav-link {% if request.resolver_match.url_name == 'room_list' %}active-link{% endif %}">
+          <i data-lucide="users" class="w-5 h-5"></i>
+          <span>My Rooms</span>
+        </a>
+        <a href="{% url 'join_room' %}" class="nav-link {% if request.resolver_match.url_name == 'join_room' %}active-link{% endif %}">
+          <i data-lucide="user-plus" class="w-5 h-5"></i>
+          <span>Join Room</span>
+        </a>
+        <a href="{% url 'task_list' %}" class="nav-link {% if request.resolver_match.url_name == 'task_list' %}active-link{% endif %}">
+          <i data-lucide="check-square" class="w-5 h-5"></i>
+          <span>My Tasks</span>
+        </a>
+      {% endif %}
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 flex items-center justify-center p-8">
+    <div class="w-full max-w-md mx-auto p-8 bg-white rounded-xl shadow-xl">
+      <div class="flex flex-col items-center mb-6">
+        <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mb-4">
+          <i data-lucide="check-circle" class="w-8 h-8 text-white"></i>
+        </div>
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Room Created!</h1>
+        <p class="text-gray-600">Your private room has been created successfully.</p>
+      </div>
+
+      <div class="mb-6 p-4 bg-gray-50 border border-gray-300 rounded-md">
+        <h2 class="text-lg font-semibold text-gray-800 mb-2">Room Code</h2>
+        <div class="flex items-center justify-between">
+          <input id="room-code" value="{{ room_code }}" readonly class="text-xl font-mono text-blue-600 bg-white border border-gray-300 rounded-md px-3 py-2 w-full mr-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <button onclick="copyCode()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+            Copy
+          </button>
+        </div>
+      </div>
+
+      <p class="text-gray-700 mb-6 text-center">
+        Share this code with employees to allow them to join this private room instantly.
+      </p>
+
+      <div class="flex flex-col space-y-3">
+        <a href="{% url 'room_list' %}" class="w-full inline-flex justify-center py-2 px-4 rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition">
+          Go to My Rooms
+        </a>
+        <a href="{% url 'create_room' %}" class="w-full inline-flex justify-center py-2 px-4 rounded-md shadow-sm text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 transition">
+          Create Another Room
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    lucide.createIcons();
+    function copyCode() {
+      const code = document.getElementById("room-code");
+      code.select();
+      document.execCommand("copy");
+      alert("Room code copied to clipboard!");
+    }
+  </script>
+</body>
+</html>

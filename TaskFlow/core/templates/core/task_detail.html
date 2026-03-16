@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ task.title }} - TaskFlow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .sidebar-transition { transition: transform 0.3s ease-in-out; }
+        .gradient-bg {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .status-badge {
+            font-size: 0.75rem;
+            font-weight: 500;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+        }
+        .status-pending { background-color: #fef3c7; color: #92400e; }
+        .status-in_progress { background-color: #dbeafe; color: #1e40af; }
+        .status-submitted { background-color: #e0e7ff; color: #3730a3; }
+        .status-completed { background-color: #dcfce7; color: #166534; }
+        .status-overdue { background-color: #fee2e2; color: #991b1b; }
+
+        .difficulty-low { background-color: #ecfdf5; color: #059669; }
+        .difficulty-medium { background-color: #fef3c7; color: #d97706; }
+        .difficulty-high { background-color: #fee2e2; color: #dc2626; }
+
+        .importance-low { background-color: #f0f9ff; color: #0284c7; }
+        .importance-medium { background-color: #fef3c7; color: #d97706; }
+        .importance-high { background-color: #fee2e2; color: #dc2626; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Mobile menu button -->
+    <div class="lg:hidden fixed top-4 left-4 z-50">
+        <button id="mobile-menu-btn" class="bg-white p-2 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <i data-lucide="menu" class="w-6 h-6 text-gray-600"></i>
+        </button>
+    </div>
+
+    <!-- Sidebar -->
+    <div id="sidebar" class="fixed left-0 top-0 h-full w-64 bg-white shadow-xl z-40 transform -translate-x-full lg:translate-x-0 sidebar-transition">
+        <div class="p-6 border-b border-gray-100">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
+                    <i data-lucide="briefcase" class="w-6 h-6 text-white"></i>
+                </div>
+                <div>
+                    <h2 class="font-semibold text-gray-800">TaskFlow</h2>
+                    <p class="text-sm text-gray-500">Productivity Dashboard</p>
+                </div>
+            </div>
+        </div>
+
+        <nav class="p-4 space-y-1">
+            <div class="mb-6">
+                <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                    <div class="w-8 h-8 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center">
+                        <span class="text-white font-medium text-sm">{{ request.user.username|first|upper }}</span>
+                    </div>
+                    <div>
+                        <p class="font-medium text-gray-800">{{ request.user.username }}</p>
+                        <p class="text-xs text-gray-500">{{ request.user.profile.get_role_display }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <a href="{% url 'home' %}" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 text-gray-700 hover:text-gray-900 transition-colors">
+                <i data-lucide="home" class="w-5 h-5"></i>
+                <span>Dashboard</span>
+            </a>
+
+            {% if request.user.profile.role == "boss" %}
+                <a href="{% url 'room_list' %}" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 text-gray-700 hover:text-gray-900 transition-colors">
+                    <i data-lucide="users" class="w-5 h-5"></i>
+                    <span>My Rooms</span>
+                </a>
+                <a href="{% url 'create_room' %}" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 text-gray-700 hover:text-gray-900 transition-colors">
+                    <i data-lucide="plus-circle" class="w-5 h-5"></i>
+                    <span>Create Room</span>
+                </a>
+                <a href="{% url 'create_task' %}" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 text-gray-700 hover:text-gray-900 transition-colors">
+                    <i data-lucide="clipboard-plus" class="w-5 h-5"></i>
+                    <span>Assign Task</span>
+                </a>
+                <a href="{% url 'task_list' %}" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 text-gray-700 hover:text-gray-900 transition-colors">
+                    <i data-lucide="clipboard-list" class="w-5 h-5"></i>
+                    <span>All Tasks</span>
+                </a>
+            {% elif request.user.profile.role == "employee" %}
+                <a href="{% url 'room_list' %}" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 text-gray-700 hover:text-gray-900 transition-colors">
+                    <i data-lucide="users" class="w-5 h-5"></i>
+                    <span>My Rooms</span>
+                </a>
+                <a href="{% url 'join_room' %}" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 text-gray-700 hover:text-gray-900 transition-colors">
+                    <i data-lucide="user-plus" class="w-5 h-5"></i>
+                    <span>Join Room</span>
+                </a>
+                <a href="{% url 'task_list' %}" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 text-gray-700 hover:text-gray-900 transition-colors">
+                    <i data-lucide="check-square" class="w-5 h-5"></i>
+                    <span>My Tasks</span>
+                </a>
+            {% endif %}
+        </nav>
+
+        <div class="absolute bottom-4 left-4 right-4">
+            <a href="{% url 'logout' %}" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-red-50 text-red-600 hover:text-red-700 transition-colors w-full">
+                <i data-lucide="log-out" class="w-5 h-5"></i>
+                <span>Logout</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Overlay for mobile -->
+    <div id="overlay" class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden lg:hidden"></div>
+
+    <!-- Main content -->
+    <div class="lg:ml-64 min-h-screen">
+        <!-- Header with back button -->
+        <div class="bg-white border-b border-gray-200 px-6 py-4">
+            <div class="flex items-center space-x-4">
+                <button onclick="history.back()" class="flex items-center text-gray-600 hover:text-gray-900 transition-colors">
+                    <i data-lucide="arrow-left" class="w-5 h-5 mr-2"></i>
+                    Back
+                </button>
+                <div class="text-gray-300">|</div>
+                <h1 class="text-xl font-semibold text-gray-900">Task Details</h1>
+            </div>
+        </div>
+
+        <div class="p-6 lg:p-8">
+            <!-- Task Header -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+                <div class="gradient-bg p-6 text-white">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <h1 class="text-2xl font-bold mb-2">{{ task.title }}</h1>
+                            <div class="flex items-center space-x-4 text-indigo-100">
+                                <span class="flex items-center space-x-1">
+                                    <i data-lucide="calendar" class="w-4 h-4"></i>
+                                    <span>Due {{ task.deadline|date:"M d, Y" }}</span>
+                                </span>
+                                <span class="flex items-center space-x-1">
+                                    <i data-lucide="users" class="w-4 h-4"></i>
+                                    <span>{{ task.task_room.name }}</span>
+                                </span>
+                                {% if request.user.profile.role == "boss" %}
+                                <span class="flex items-center space-x-1">
+                                    <i data-lucide="user" class="w-4 h-4"></i>
+                                    <span>{{ task.assigned_to.username }}</span>
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="flex flex-col space-y-2">
+                            <span class="status-badge status-{{ task.status|slugify }}{% if is_overdue %} status-overdue{% endif %}">
+                                {% if is_overdue %}
+                                    Overdue
+                                {% elif task.status == 'in_progress' %}
+                                    In Progress
+                                {% else %}
+                                    {{ task.get_status_display|default:task.status|title }}
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Task Metadata Section -->
+                <div class="px-6 py-4 bg-gray-50 border-b border-gray-100">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <!-- Status with overdue indicator -->
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="activity" class="w-4 h-4 text-gray-500"></i>
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase tracking-wide">Status</p>
+                                <div class="flex items-center space-x-2 mt-1">
+                                    <span class="status-badge status-{{ task.status|slugify }}{% if is_overdue %} status-overdue{% endif %}">
+                                        {% if is_overdue %}
+                                            Overdue
+                                        {% else %}
+                                            {{ task.get_status_display|default:task.status|title }}
+                                        {% endif %}
+                                    </span>
+                                    {% if is_overdue %}
+                                        <span class="text-xs text-red-600 font-medium">
+                                            ({{ task.deadline|timesince }} ago)
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Importance Level -->
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="alert-triangle" class="w-4 h-4 text-gray-500"></i>
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase tracking-wide">Importance</p>
+                                <span class="status-badge importance-{{ task.importance|default:'medium' }} mt-1 inline-block">
+                                    {{ task.get_importance_display|default:task.importance|default:'Medium'|title }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Difficulty Level (if available in your model) -->
+                        {% if task.difficulty %}
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="zap" class="w-4 h-4 text-gray-500"></i>
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase tracking-wide">Difficulty</p>
+                                <span class="status-badge difficulty-{{ task.difficulty }} mt-1 inline-block">
+                                    {{ task.get_difficulty_display|default:task.difficulty|title }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Time remaining -->
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="clock" class="w-4 h-4 text-gray-500"></i>
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase tracking-wide">Time Remaining</p>
+                                <p class="text-sm font-medium mt-1 {% if is_overdue %}text-red-600{% elif task.deadline|timeuntil|slice:':2' == '0' %}text-yellow-600{% else %}text-gray-700{% endif %}">
+                                    {% if is_overdue %}
+                                        {{ task.deadline|timesince }} overdue
+                                    {% else %}
+                                        {{ task.deadline|timeuntil }}
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {% if task.description %}
+                <div class="p-6 border-b border-gray-100">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                        <i data-lucide="file-text" class="w-5 h-5 mr-2 text-blue-500"></i>
+                        Description
+                    </h3>
+                    <div class="prose prose-gray max-w-none">
+                        <p class="text-gray-700 leading-relaxed">{{ task.description|linebreaks }}</p>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Action Buttons -->
+                <div class="p-6 bg-gray-50">
+                    <div class="flex flex-wrap gap-3">
+                        {% if request.user.profile.role == "employee" and task.assigned_to == request.user %}
+                            {% if task.status == 'pending' %}
+                                <a href="{% url 'submit_task' task.id %}" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium">
+                                    <i data-lucide="upload" class="w-4 h-4 mr-2"></i>
+                                    Submit Task
+                                </a>
+                                <a href="{% url 'complete_task' task.id %}" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+                                    <i data-lucide="check" class="w-4 h-4 mr-2"></i>
+                                    Mark Complete
+                                </a>
+                            {% elif task.status == 'submitted' %}
+                                <div class="inline-flex items-center px-4 py-2 bg-yellow-100 text-yellow-800 rounded-lg text-sm font-medium">
+                                    <i data-lucide="clock" class="w-4 h-4 mr-2"></i>
+                                    Awaiting Review
+                                </div>
+                            {% elif task.status == 'completed' %}
+                                <div class="inline-flex items-center px-4 py-2 bg-green-100 text-green-800 rounded-lg text-sm font-medium">
+                                    <i data-lucide="check-circle" class="w-4 h-4 mr-2"></i>
+                                    Task Completed
+                                </div>
+                            {% endif %}
+                        {% endif %}
+
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submissions Section -->
+            {% if submissions %}
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="border-b border-gray-100 px-6 py-4">
+                    <h2 class="text-lg font-semibold text-gray-900 flex items-center">
+                        <i data-lucide="file-text" class="w-5 h-5 mr-2 text-blue-500"></i>
+                        Submissions ({{ submissions.count }})
+                    </h2>
+                </div>
+                <div class="divide-y divide-gray-100">
+                    {% for submission in submissions %}
+                    <div class="p-6">
+                        <div class="flex items-start justify-between mb-4">
+                            <div>
+                                <h3 class="font-medium text-gray-900 mb-1 flex items-center">
+                                    <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">
+                                        {{ submission.submitted_by.username|first|upper }}
+                                    </div>
+                                    Submitted by {{ submission.submitted_by.username }}
+                                </h3>
+                                <p class="text-sm text-gray-500">
+                                    {{ submission.submitted_at|date:"M d, Y g:i A" }}
+                                </p>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                {% if submission.score %}
+                                    <span class="px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
+                                        Score: {{ submission.score }}/100
+                                    </span>
+                                {% else %}
+                                    <span class="px-3 py-1 bg-yellow-100 text-yellow-800 text-sm font-medium rounded-full">
+                                        Pending Review
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        {% if submission.content %}
+                        <div class="mb-4">
+                            <h4 class="font-medium text-gray-700 mb-2 flex items-center">
+                                <i data-lucide="message-square" class="w-4 h-4 mr-2 text-blue-500"></i>
+                                Submission Content:
+                            </h4>
+                            <div class="bg-gray-50 rounded-lg p-4 text-gray-700 border-l-4 border-blue-400">
+                                {{ submission.content|linebreaks }}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if submission.file %}
+                        <div class="mb-4">
+                            <h4 class="font-medium text-gray-700 mb-2 flex items-center">
+                                <i data-lucide="paperclip" class="w-4 h-4 mr-2 text-blue-500"></i>
+                                Attached File:
+                            </h4>
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                <a href="{{ submission.file.url }}" target="_blank" class="inline-flex items-center space-x-2 text-blue-600 hover:text-blue-800 transition-colors font-medium">
+                                    <i data-lucide="download" class="w-4 h-4"></i>
+                                    <span>{{ submission.file.name|default:'Download File' }}</span>
+                                    <i data-lucide="external-link" class="w-3 h-3"></i>
+                                </a>
+                                {% if submission.file_size %}
+                                <p class="text-xs text-gray-500 mt-1">
+                                    File size: {{ submission.file_size|filesizeformat }}
+                                </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if submission.review_comments %}
+                        <div class="mb-4">
+                            <h4 class="font-medium text-gray-700 mb-2 flex items-center">
+                                <i data-lucide="message-circle" class="w-4 h-4 mr-2 text-purple-500"></i>
+                                Review Comments:
+                            </h4>
+                            <div class="bg-purple-50 rounded-lg p-4 text-gray-700 border-l-4 border-purple-400">
+                                {{ submission.review_comments|linebreaks }}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if submission.completion_percentage %}
+                        <div class="mb-4">
+                            <h4 class="font-medium text-gray-700 mb-2 flex items-center">
+                                <i data-lucide="percent" class="w-4 h-4 mr-2 text-green-500"></i>
+                                Completion Rate:
+                            </h4>
+                            <div class="flex items-center space-x-3">
+                                <div class="flex-1 bg-gray-200 rounded-full h-3">
+                                    <div class="bg-green-600 h-3 rounded-full" style="width: {{ submission.completion_percentage }}%"></div>
+                                </div>
+                                <span class="text-sm font-medium text-gray-700">{{ submission.completion_percentage }}%</span>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if can_review_submissions and not submission.score %}
+                        <div class="mt-4">
+                            <a href="{% url 'review_submission' submission.id %}" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium">
+                                <i data-lucide="star" class="w-4 h-4 mr-2"></i>
+                                Review Submission
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="text-center py-12 px-6">
+                    <div class="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                        <i data-lucide="file-x" class="w-8 h-8 text-gray-400"></i>
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-1">No submissions yet</h3>
+                    <p class="text-gray-500 mb-4">
+                        {% if request.user.profile.role == "employee" and task.assigned_to == request.user %}
+                            Submit your work when ready to get it reviewed.
+                        {% else %}
+                            Submissions from employees will appear here.
+                        {% endif %}
+                    </p>
+                    {% if request.user.profile.role == "employee" and task.assigned_to == request.user and task.status == 'pending' %}
+                    <a href="{% url 'submit_task' task.id %}" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+                        <i data-lucide="upload" class="w-4 h-4 mr-2"></i>
+                        Submit Now
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Mobile menu functionality
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+            document.body.classList.toggle('overflow-hidden');
+        }
+
+        mobileMenuBtn.addEventListener('click', toggleSidebar);
+        overlay.addEventListener('click', toggleSidebar);
+
+        // Close sidebar on window resize if mobile
+        window.addEventListener('resize', () => {
+            if (window.innerWidth >= 1024) {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.add('hidden');
+                document.body.classList.remove('overflow-hidden');
+            }
+        });
+    </script>
+</body>
+</html>

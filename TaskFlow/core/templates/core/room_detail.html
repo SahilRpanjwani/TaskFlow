@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ room.name }} - Room Details</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+
+        <!-- HEADER SECTION -->
+        <div class="flex items-center justify-between mb-8">
+            <div class="flex items-center space-x-4">
+                <a href="{% url 'room_list' %}" class="p-2 hover:bg-gray-200 rounded-lg transition-colors">
+                    <i data-lucide="arrow-left" class="w-6 h-6 text-gray-600"></i>
+                </a>
+                <div>
+                    <h1 class="text-4xl font-bold text-gray-900">{{ room.name }}</h1>
+                    <p class="text-gray-600 mt-1">
+                        Created by {{ room.created_by.username }}
+                    </p>
+                </div>
+            </div>
+
+            <!-- OWNER vs EMPLOYEE BUTTONS -->
+            <div class="flex items-center space-x-3">
+                {% if is_owner %}
+                    <button id="edit-room-button" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center space-x-2 shadow-md hover:shadow-lg">
+                        <i data-lucide="edit-2" class="w-5 h-5"></i>
+                        <span>Edit Room</span>
+                    </button>
+
+                    <a href="{% url 'create_task' %}" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center space-x-2 shadow-md hover:shadow-lg">
+                        <i data-lucide="plus-circle" class="w-5 h-5"></i>
+                        <span>Assign Task</span>
+                    </a>
+
+                    <a href="{% url 'room_analytics' room.id %}" class="bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center space-x-2 shadow-md hover:shadow-lg">
+                        <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+                        <span>Analytics</span>
+                    </a>
+
+                    <a href="{% url 'delete_room' room.id %}" class="bg-red-500 hover:bg-red-600 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center space-x-2 shadow-md hover:shadow-lg">
+                        <i data-lucide="trash-2" class="w-5 h-5"></i>
+                        <span>Delete Room</span>
+                    </a>
+
+                {% else %}
+                    <!-- EMPLOYEE ANALYTICS BUTTON -->
+                    <a href="{% url 'employee_analytics_room' room.id %}"
+                       class="bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center space-x-2 shadow-md hover:shadow-lg">
+                        <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+                        <span>My Analytics</span>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- MAIN GRID LAYOUT -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2 space-y-8">
+
+                {% if is_owner and not room.is_public %}
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                    <h2 class="text-2xl font-semibold text-gray-900 mb-4">Room Code</h2>
+                    <p class="text-xl font-mono text-blue-600 break-all bg-gray-50 p-3 rounded-md border border-dashed border-gray-300">
+                        {{ room.room_code }}
+                    </p>
+                    <p class="text-sm text-gray-500 mt-2">
+                        Share this code with employees to allow them to join this private room.
+                    </p>
+                </div>
+                {% endif %}
+
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                    <h2 class="text-2xl font-semibold text-gray-900 mb-4">Room Description</h2>
+                    <p class="text-gray-600">{{ room.description }}</p>
+                </div>
+
+                <!-- MEMBERS SECTION -->
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-2xl font-semibold text-gray-900">Members ({{ members.count }})</h2>
+                    </div>
+
+                    <div class="space-y-4">
+                        {% if accepted_members %}
+                            <h3 class="text-xl font-medium text-gray-800">Active Members</h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                {% for membership in accepted_members %}
+                                    <div class="flex items-center p-4 bg-gray-50 rounded-lg transition-shadow duration-300 hover:shadow-sm">
+                                        <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-lg mr-4">
+                                            {{ membership.user.username|first|upper }}
+                                        </div>
+                                        <div class="flex-grow">
+                                            <p class="font-medium text-gray-900">{{ membership.user.username }}</p>
+                                            <p class="text-sm text-gray-500">{{ membership.user.profile.get_role_display|capfirst }}</p>
+                                        </div>
+
+                                        {% if is_owner and membership.user != room.created_by %}
+                                            <form method="POST" action="{% url 'remove_member' room.id %}" class="ml-2">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="member_id" value="{{ membership.id }}">
+                                                <button type="submit" class="text-red-500 hover:text-red-700 transition-colors">
+                                                    <i data-lucide="x" class="w-5 h-5"></i>
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        {% if pending_members and is_owner %}
+                            <h3 class="text-xl font-medium text-gray-800 mt-6">Pending Requests</h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                {% for membership in pending_members %}
+                                    <div class="flex items-center p-4 bg-yellow-50 border-l-4 border-yellow-500 rounded-lg shadow-sm">
+                                        <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-lg mr-4">
+                                            {{ membership.user.username|first|upper }}
+                                        </div>
+                                        <div class="flex-grow">
+                                            <p class="font-medium text-gray-900">{{ membership.user.username }}</p>
+                                            <p class="text-sm text-gray-500">Requesting to join</p>
+                                        </div>
+
+                                        <form method="POST" action="{% url 'accept_member' room.id membership.id %}" class="ml-2">
+                                            {% csrf_token %}
+                                            <button type="submit" class="text-green-500 hover:text-green-700 transition-colors">
+                                                <i data-lucide="check" class="w-5 h-5"></i>
+                                            </button>
+                                        </form>
+
+                                        <form method="POST" action="{% url 'remove_member' room.id %}" class="ml-2">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="member_id" value="{{ membership.id }}">
+                                            <button type="submit" class="text-red-500 hover:text-red-700 transition-colors">
+                                                <i data-lucide="x" class="w-5 h-5"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- SUBMISSIONS -->
+                {% if is_owner %}
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                    <h2 class="text-2xl font-semibold text-gray-900 mb-4">Submissions</h2>
+
+                    {% if pending_submissions %}
+                        <div class="mb-6">
+                            <h3 class="text-xl font-medium text-gray-800 mb-3">Pending Review ({{ pending_submissions.count }})</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {% for submission in pending_submissions %}
+                                    <div class="p-4 bg-yellow-50 border-l-4 border-yellow-500 rounded-lg shadow-sm">
+                                        <p class="font-semibold text-gray-900">{{ submission.task.title }}</p>
+                                        <p class="text-sm text-gray-600">Submitted by {{ submission.submitted_by.username }}</p>
+                                        <a href="{% url 'review_submission' submission.id %}" class="inline-flex items-center text-sm font-medium text-blue-600 hover:underline mt-2">
+                                            Review & Score <i data-lucide="arrow-right" class="w-4 h-4 ml-1"></i>
+                                        </a>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    {% if reviewed_submissions %}
+                        <div>
+                            <h3 class="text-xl font-medium text-gray-800 mb-3">Reviewed Submissions ({{ reviewed_submissions.count }})</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {% for submission in reviewed_submissions %}
+                                    <div class="p-4 bg-green-50 border-l-4 border-green-500 rounded-lg shadow-sm">
+                                        <p class="font-semibold text-gray-900">{{ submission.task.title }}</p>
+                                        <p class="text-sm text-gray-600">Submitted by {{ submission.submitted_by.username }}</p>
+                                        <p class="text-sm mt-1">Score: <span class="font-bold text-green-700">{{ submission.score|default:"Not scored" }}</span></p>
+                                        <a href="{% url 'review_submission' submission.id %}" class="inline-flex items-center text-sm font-medium text-blue-600 hover:underline mt-2">
+                                            Re-review <i data-lucide="arrow-right" class="w-4 h-4 ml-1"></i>
+                                        </a>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    {% if not pending_submissions and not reviewed_submissions %}
+                        <p class="text-gray-500">No submissions have been made in this room yet.</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- RIGHT SIDEBAR -->
+            <div class="lg:col-span-1 space-y-8">
+
+                <!-- TASK LIST -->
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                    <h2 class="text-2xl font-semibold text-gray-900 mb-4">Tasks</h2>
+                    <div class="space-y-4">
+                        {% for task in tasks %}
+                            <div class="p-4 rounded-lg border {% if task.status == 'completed' %}border-green-200 bg-green-50{% else %}border-gray-200 bg-gray-50{% endif %}">
+                                <h3 class="font-semibold text-gray-900 mb-1">{{ task.title }}</h3>
+                                <p class="text-sm text-gray-600">Assigned to: <span class="font-medium">{{ task.assigned_to.username }}</span></p>
+                                <p class="text-sm text-gray-600">Deadline: {{ task.deadline|date:"M d, Y" }}</p>
+                                <p class="text-sm mt-2">
+                                    <span class="px-2 py-1 rounded-full text-xs font-medium {% if task.status == 'pending' %}bg-yellow-200 text-yellow-800{% else %}bg-green-200 text-green-800{% endif %}">
+                                        {{ task.get_status_display|capfirst }}
+                                    </span>
+                                </p>
+                            </div>
+                        {% empty %}
+                            <p class="text-gray-500">No tasks have been created for this room yet.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- QUICK STATS (OWNER ONLY) -->
+                {% if is_owner %}
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                    <h2 class="text-2xl font-semibold text-gray-900 mb-4">Quick Stats</h2>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                            <span class="text-gray-700">Total Tasks</span>
+                            <span class="font-bold text-blue-600">{{ tasks.count }}</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                            <span class="text-gray-700">Completed Tasks</span>
+                            <span class="font-bold text-green-600">{{ completed_tasks|default:0 }}</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-yellow-50 rounded-lg">
+                            <span class="text-gray-700">Pending Submissions</span>
+                            <span class="font-bold text-yellow-600">{{ pending_submissions.count }}</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
+                            <span class="text-gray-700">Active Members</span>
+                            <span class="font-bold text-purple-600">{{ accepted_members.count }}</span>
+                        </div>
+                    </div>
+
+                    <a href="{% url 'room_analytics' room.id %}"
+                       class="w-full mt-4 bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2">
+                        <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+                        <span>View Detailed Analytics</span>
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT ROOM MODAL -->
+    <div id="edit-room-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <h3 class="text-2xl font-semibold text-gray-900 mb-4">Edit Room Details</h3>
+            <form method="POST" action="{% url 'edit_room' room.id %}" class="space-y-4">
+                {% csrf_token %}
+                <div>
+                    <label for="name" class="block text-sm font-medium text-gray-700">Room Name</label>
+                    <input type="text" name="name" id="name" value="{{ room.name }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2">
+                </div>
+                <div>
+                    <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                    <textarea name="description" id="description" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2">{{ room.description }}</textarea>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" id="close-modal" class="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300">
+                        Cancel
+                    </button>
+                    <button type="submit" class="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        const modal = document.getElementById('edit-room-modal');
+        const editButton = document.getElementById('edit-room-button');
+        const closeModalButton = document.getElementById('close-modal');
+
+        editButton?.addEventListener('click', () => modal.classList.remove('hidden'));
+        closeModalButton?.addEventListener('click', () => modal.classList.add('hidden'));
+    </script>
+
+</body>
+</html>
